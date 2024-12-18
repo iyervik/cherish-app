@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime
 
 # App Configurations
-st.set_page_config(page_title="Cherish", page_icon="✨", layout="centered")
+st.set_page_config(page_title="Cherish", page_icon="✨", layout="wide")
 
 # Splash Screen
 if "splash_done" not in st.session_state:
@@ -32,42 +32,47 @@ st.write("Your Memory Profiles")
 profiles = st.session_state.get("profiles", [])
 
 # Create New Profile
-if st.button("Create New Profile"):
+with st.expander("Create New Profile"):
     with st.form("Create Profile"):
-        name = st.text_input("Name")
-        description = st.text_area("Description")
+        name = st.text_input("Name", placeholder="Enter the person's name")
+        description = st.text_area("Description", placeholder="Add a brief description or relation")
         photo = st.file_uploader("Upload a Cover Photo")
         submitted = st.form_submit_button("Save Profile")
         if submitted:
             profiles.append({"name": name, "description": description, "photo": photo, "memories": []})
             st.session_state["profiles"] = profiles
-            st.success("Profile created successfully!")
+            st.success(f"Profile for {name} created successfully!")
 
 # List Profiles
-for profile in profiles:
-    st.subheader(profile["name"])
-    st.write(profile["description"])
-    if st.button(f"View {profile['name']}"):
-        st.session_state.selected_profile = profile
-        st.session_state.viewing_profile = True
+for index, profile in enumerate(profiles):
+    with st.container():
+        st.subheader(profile["name"])
+        if profile["photo"]:
+            st.image(profile["photo"], width=100, caption=profile["name"])
+        st.write(profile["description"])
+        if st.button(f"View Profile ({profile['name']})", key=f"view_{index}"):
+            st.session_state.selected_profile = profile
+            st.session_state.viewing_profile = True
 
 # Profile View
 if "viewing_profile" in st.session_state and st.session_state.viewing_profile:
     selected_profile = st.session_state.selected_profile
-    st.title(selected_profile["name"])
-    st.image(selected_profile["photo"], caption=selected_profile["name"])
+    st.title(f"Profile: {selected_profile['name']}")
 
     # Tabs for Timeline, Gallery, Collaborators
-    tab = st.radio("Select Tab", ["Timeline", "Gallery", "Collaborators"])
+    tab = st.radio("Select Tab", ["Timeline", "Gallery", "Collaborators"], horizontal=True)
 
     if tab == "Timeline":
         st.write("### Timeline")
-        for memory in selected_profile["memories"]:
-            st.write(f"- {memory['content']} ({memory['date']})")
+        if not selected_profile["memories"]:
+            st.info("No memories added yet. Click 'Add Memory' to start!")
+        else:
+            for memory in selected_profile["memories"]:
+                st.write(f"- **{memory['content']}** ({memory['date']})")
 
         if st.button("Add Memory"):
             with st.form("Add Memory"):
-                content = st.text_area("Memory Content")
+                content = st.text_area("Memory Content", placeholder="Write your memory here")
                 date = st.date_input("Date", value=datetime.today())
                 submit_memory = st.form_submit_button("Save Memory")
                 if submit_memory:
@@ -77,12 +82,14 @@ if "viewing_profile" in st.session_state and st.session_state.viewing_profile:
     elif tab == "Gallery":
         st.write("### Gallery")
         st.write("(Photos and Videos will be displayed here)")
+        st.info("Gallery feature coming soon!")
 
     elif tab == "Collaborators":
         st.write("### Collaborators")
         st.write("(Manage collaborators here)")
+        st.info("Collaborators feature coming soon!")
 
-# Settings Screen
+# Sidebar Settings
 st.sidebar.title("Settings")
 if st.sidebar.button("Upgrade to Premium"):
     st.sidebar.write("Premium features coming soon!")
